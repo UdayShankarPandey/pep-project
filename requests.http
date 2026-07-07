@@ -1,0 +1,49 @@
+### Register User
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "email": "jane3.doe@example.com",
+  "password": "password123"
+}
+
+
+### Login User
+# @name login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jane3.doe@example.com",
+  "password": "password123"
+}
+
+### Extract token if using VS Code REST Client
+@token = {{login.response.body.token}}
+
+### Get All Users (Will fail without Bearer token - 401 Unauthorized)
+GET http://localhost:3000/api/users
+
+### Get All Users (Protected - Pass the Bearer token)
+# (Option 1) If using VS Code REST client, the variable @token is automatically populated
+# (Option 2) Replace {{token}} manually with the token from the register/login response
+GET http://localhost:3000/api/users
+Authorization: Bearer {{token}}
+
+### Upload Image to ImageKit (Protected - Pass the Bearer token)
+# Make sure you are logged in to set {{token}}
+# Replace "c:/path/to/your/image.png" below with a path to a real image on your computer
+POST http://localhost:3000/api/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="test.png"
+Content-Type: image/png
+
+< C:\Users\Uday Shankar Pandey\OneDrive\Pictures\Screenshots\Screenshot 2026-02-17 175755.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+
+
