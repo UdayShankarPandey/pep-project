@@ -2,6 +2,7 @@ import express, { json, urlencoded } from 'express';
 import userRoutes from './routes/user.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
+import postRoutes from './routes/post.routes.js';
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(urlencoded({ extended: true }));
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/posts', postRoutes);
 
 // Basic health check route
 app.get('/health', (req, res) => {

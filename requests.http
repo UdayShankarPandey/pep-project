@@ -46,4 +46,89 @@ Content-Type: image/png
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
 
+### Create Post - Option 1: Direct File Upload (Protected - Pass Bearer token)
+# Make sure you are logged in to set {{token}}
+# Replace the image file path below with a real path on your computer
+POST http://localhost:3000/api/posts
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryPostUpload
 
+------WebKitFormBoundaryPostUpload
+Content-Disposition: form-data; name="title"
+
+My Awesome First Post
+------WebKitFormBoundaryPostUpload
+Content-Disposition: form-data; name="content"
+
+Checking out the new post creation features!
+------WebKitFormBoundaryPostUpload
+Content-Disposition: form-data; name="image"; filename="test_post.png"
+Content-Type: image/png
+
+< C:\Users\Uday Shankar Pandey\OneDrive\Pictures\Screenshots\Screenshot 2026-02-17 175755.png
+------WebKitFormBoundaryPostUpload--
+
+
+### Create Post - Option 2: JSON Body with Pre-uploaded Image (Protected - Pass Bearer token)
+# Make sure you are logged in to set {{token}}
+POST http://localhost:3000/api/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "A Beautiful Day",
+  "content": "This post was created using a pre-uploaded image URL.",
+  "imageUrl": "https://ik.imagekit.io/your_imagekit_id/uploads/image-default.png",
+  "imageThumbnailUrl": "https://ik.imagekit.io/your_imagekit_id/uploads/image-default.png?tr=w-100",
+  "imageFileId": "default-file-id"
+}
+
+
+### Get All Posts (Public)
+GET http://localhost:3000/api/posts
+
+
+### Get Single Post by ID (Public)
+# @name getPost
+# Replace with a real post ID from the list response or create response
+@postId = 64b8a245fc13ae21287c88b2
+GET http://localhost:3000/api/posts/{{postId}}
+
+
+### Update Post (Protected - Must be the author)
+PUT http://localhost:3000/api/posts/{{postId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Updated Title: Even More Awesome",
+  "content": "Updated content goes here."
+}
+
+
+### Toggle Like/Unlike on Post (Protected)
+POST http://localhost:3000/api/posts/{{postId}}/like
+Authorization: Bearer {{token}}
+
+
+### Comment on Post (Protected)
+# @name addComment
+POST http://localhost:3000/api/posts/{{postId}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "text": "This is a great post!"
+}
+
+
+### Delete Comment (Protected - Must be comment author, post owner, or admin)
+# Replace with a real comment ID
+@commentId = 64b8a24bfc13ae21287c88ba
+DELETE http://localhost:3000/api/posts/{{postId}}/comments/{{commentId}}
+Authorization: Bearer {{token}}
+
+
+### Delete Post (Protected - Must be author or admin)
+DELETE http://localhost:3000/api/posts/{{postId}}
+Authorization: Bearer {{token}}
