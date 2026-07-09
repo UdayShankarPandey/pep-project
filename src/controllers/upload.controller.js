@@ -24,8 +24,7 @@ export const uploadImage = async (req, res) => {
   } catch (error) {
     console.error('ImageKit Upload Error:', error);
     res.status(500).json({
-      message: 'Failed to upload image.',
-      error: error.message
+      message: 'Failed to upload image.'
     });
   }
 };
