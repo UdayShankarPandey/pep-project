@@ -24,11 +24,12 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists with this email.' });
     }
 
-    // Create the user (pre-save hook hashes password)
+    // Create the user — role is always 'user' on registration (prevent privilege escalation)
     const user = await User.create({
       name,
       email,
       password
+      // role is NOT accepted from req.body — defaults to 'user' via schema
     });
 
     const token = generateToken(user._id);
@@ -45,7 +46,8 @@ export const register = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error during registration.', error: error.message });
+    console.error('Registration Error:', error.message);
+    res.status(500).json({ message: 'Server error during registration.' });
   }
 };
 
@@ -77,7 +79,21 @@ export const login = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error during login.', error: error.message });
+    console.error('Login Error:', error.message);
+    res.status(500).json({ message: 'Server error during login.' });
   }
 };
 
+// Get current logged-in user's profile
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    console.error('GetMe Error:', error.message);
+    res.status(500).json({ message: 'Server error fetching profile.' });
+  }
+};
