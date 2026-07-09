@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { protect } from '../middleware/auth.middleware.js';
+import { protect, authorize } from '../middleware/auth.middleware.js';
 import {
   createUser,
   getUsers,
@@ -10,8 +10,9 @@ import {
 
 const router = Router();
 
-// Protect all user routes
+// Protect all user routes — must be logged in AND be admin
 router.use(protect);
+router.use(authorize('admin'));
 
 // Routes for /api/users
 router.route('/')

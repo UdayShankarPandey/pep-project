@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Name is required'],
       trim: true,
+      maxlength: [100, 'Name cannot exceed 100 characters'],
     },
     email: {
       type: String,
@@ -14,6 +15,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      maxlength: [255, 'Email cannot exceed 255 characters'],
       match: [
         /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
         'Please fill a valid email address',
@@ -32,6 +34,21 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    // Never include password when converting to JSON
+    toJSON: {
+      transform(doc, ret) {
+        delete ret.password;
+        delete ret.__v;
+        return ret;
+      }
+    },
+    toObject: {
+      transform(doc, ret) {
+        delete ret.password;
+        delete ret.__v;
+        return ret;
+      }
+    }
   }
 );
 
@@ -52,4 +69,3 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
 const User = mongoose.model('User', userSchema);
 
 export default User;
-

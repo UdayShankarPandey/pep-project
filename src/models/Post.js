@@ -10,7 +10,8 @@ const commentSchema = new mongoose.Schema(
     text: {
       type: String,
       required: [true, 'Comment text is required'],
-      trim: true
+      trim: true,
+      maxlength: [2000, 'Comment cannot exceed 2000 characters']
     }
   },
   {
@@ -28,11 +29,13 @@ const postSchema = new mongoose.Schema(
     title: {
       type: String,
       required: [true, 'Post title is required'],
-      trim: true
+      trim: true,
+      maxlength: [300, 'Title cannot exceed 300 characters']
     },
     content: {
       type: String,
-      trim: true
+      trim: true,
+      maxlength: [10000, 'Content cannot exceed 10000 characters']
     },
     imageUrl: {
       type: String,

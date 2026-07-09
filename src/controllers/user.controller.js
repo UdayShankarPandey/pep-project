@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 
-// Create a new user
+// Create a new user (admin only)
 export const createUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -19,8 +19,8 @@ export const createUser = async (req, res) => {
     const user = await User.create({
       name,
       email,
-      password, // Password is stored as plain text for simplicity in this step
-      role
+      password, // Password is hashed automatically by the pre-save hook
+      role      // Admins can set role since this route is admin-only
     });
 
     res.status(201).json({
@@ -34,7 +34,8 @@ export const createUser = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Create User Error:', error.message);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -44,7 +45,8 @@ export const getUsers = async (req, res) => {
     const users = await User.find({}, '-password'); // Exclude password from the returned docs
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Get Users Error:', error.message);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -57,24 +59,30 @@ export const getUserById = async (req, res) => {
     }
     res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Get User Error:', error.message);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 // Update a user
 export const updateUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    // Only allow specific fields to be updated (whitelist)
+    const allowedFields = ['name', 'email', 'password', 'role'];
+    const updates = {};
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key];
+      }
+    }
 
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (name) user.name = name;
-    if (email) user.email = email;
-    if (password) user.password = password;
-    if (role) user.role = role;
+    // Apply allowed updates
+    Object.assign(user, updates);
 
     const updatedUser = await user.save();
 
@@ -89,7 +97,8 @@ export const updateUser = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Update User Error:', error.message);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -102,6 +111,7 @@ export const deleteUser = async (req, res) => {
     }
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Delete User Error:', error.message);
+    res.status(500).json({ message: 'Server error' });
   }
 };
