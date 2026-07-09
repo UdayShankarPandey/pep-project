@@ -1,6 +1,9 @@
 import imagekit from '../config/imagekit.js';
 import Post from '../models/Post.js';
 
+// Max pagination limit to prevent abuse
+const MAX_LIMIT = 50;
+
 // Create a new post
 export const createPost = async (req, res) => {
   try {
@@ -44,20 +47,37 @@ export const createPost = async (req, res) => {
     });
   } catch (error) {
     console.error('Create Post Error:', error);
-    res.status(500).json({ message: 'Failed to create post.', error: error.message });
+    res.status(500).json({ message: 'Failed to create post.' });
   }
 };
 
-// Get all posts (newest first)
+// Get all posts (newest first, with pagination)
 export const getPosts = async (req, res) => {
   try {
-    const posts = await Post.find()
-      .populate('user', 'name email role')
-      .populate('comments.user', 'name email')
-      .sort({ createdAt: -1 });
-    res.status(200).json(posts);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const [posts, total] = await Promise.all([
+      Post.find()
+        .populate('user', 'name email role')
+        .populate('comments.user', 'name email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Post.countDocuments()
+    ]);
+
+    res.status(200).json({
+      posts,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      totalPosts: total
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to retrieve posts.', error: error.message });
+    console.error('Get Posts Error:', error.message);
+    res.status(500).json({ message: 'Failed to retrieve posts.' });
   }
 };
 
@@ -73,7 +93,38 @@ export const getPostById = async (req, res) => {
     }
     res.status(200).json(post);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to retrieve post.', error: error.message });
+    console.error('Get Post Error:', error.message);
+    res.status(500).json({ message: 'Failed to retrieve post.' });
+  }
+};
+
+// Get posts by a specific user
+export const getPostsByUser = async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const [posts, total] = await Promise.all([
+      Post.find({ user: req.params.userId })
+        .populate('user', 'name email role')
+        .populate('comments.user', 'name email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Post.countDocuments({ user: req.params.userId })
+    ]);
+
+    res.status(200).json({
+      posts,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      totalPosts: total
+    });
+  } catch (error) {
+    console.error('Get User Posts Error:', error.message);
+    res.status(500).json({ message: 'Failed to retrieve user posts.' });
   }
 };
 
@@ -95,13 +146,35 @@ export const updatePost = async (req, res) => {
     if (title) post.title = title;
     if (content !== undefined) post.content = content;
 
+    // Handle image update via file upload
+    if (req.file) {
+      // Delete old image from ImageKit if it exists
+      if (post.imageFileId) {
+        try {
+          await imagekit.files.deleteFile(post.imageFileId);
+        } catch (ikError) {
+          console.error('Failed to delete old image from ImageKit:', ikError.message);
+        }
+      }
+
+      const result = await imagekit.files.upload({
+        file: req.file.buffer.toString('base64'),
+        fileName: `post-${Date.now()}-${req.file.originalname}`,
+        folder: '/posts'
+      });
+      post.imageUrl = result.url;
+      post.imageThumbnailUrl = result.thumbnailUrl;
+      post.imageFileId = result.fileId;
+    }
+
     const updatedPost = await post.save();
     res.status(200).json({
       message: 'Post updated successfully.',
       post: updatedPost
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update post.', error: error.message });
+    console.error('Update Post Error:', error.message);
+    res.status(500).json({ message: 'Failed to update post.' });
   }
 };
 
@@ -132,7 +205,8 @@ export const deletePost = async (req, res) => {
     await post.deleteOne();
     res.status(200).json({ message: 'Post deleted successfully.' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to delete post.', error: error.message });
+    console.error('Delete Post Error:', error.message);
+    res.status(500).json({ message: 'Failed to delete post.' });
   }
 };
 
@@ -163,7 +237,8 @@ export const likePost = async (req, res) => {
       likes: post.likes
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to toggle like on post.', error: error.message });
+    console.error('Like Post Error:', error.message);
+    res.status(500).json({ message: 'Failed to toggle like on post.' });
   }
 };
 
@@ -173,6 +248,11 @@ export const commentPost = async (req, res) => {
     const { text } = req.body;
     if (!text) {
       return res.status(400).json({ message: 'Comment text is required.' });
+    }
+
+    // Limit comment length to prevent abuse
+    if (text.length > 2000) {
+      return res.status(400).json({ message: 'Comment must be 2000 characters or less.' });
     }
 
     const post = await Post.findById(req.params.id);
@@ -197,7 +277,8 @@ export const commentPost = async (req, res) => {
       post: updatedPost
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to add comment.', error: error.message });
+    console.error('Comment Post Error:', error.message);
+    res.status(500).json({ message: 'Failed to add comment.' });
   }
 };
 
@@ -231,6 +312,7 @@ export const deleteComment = async (req, res) => {
       comments: post.comments
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to delete comment.', error: error.message });
+    console.error('Delete Comment Error:', error.message);
+    res.status(500).json({ message: 'Failed to delete comment.' });
   }
 };

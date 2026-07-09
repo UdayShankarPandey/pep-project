@@ -4,6 +4,7 @@ import {
   createPost,
   getPosts,
   getPostById,
+  getPostsByUser,
   updatePost,
   deletePost,
   likePost,
@@ -14,20 +15,31 @@ import { protect } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
-// Configure multer to use memory storage for image uploading in post creation
+// Configure multer with memory storage and image-only file filter
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
   }
 });
 
 // Post routes
 router.post('/', protect, upload.single('image'), createPost);
 router.get('/', getPosts);
+
+// Get posts by a specific user (must be before /:id to avoid 'user' matching as an ID)
+router.get('/user/:userId', getPostsByUser);
+
 router.get('/:id', getPostById);
-router.put('/:id', protect, updatePost);
+router.put('/:id', protect, upload.single('image'), updatePost);
 router.delete('/:id', protect, deletePost);
 
 // Like routes
