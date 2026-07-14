@@ -1,133 +1,167 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Calendar, Grid, MessageSquare, Trash2, Heart, ShieldAlert } from 'lucide-react';
+import { Mail, Calendar, Grid, Heart, MessageSquare, Trash2, Edit3, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Skeleton from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { Camera } from 'lucide-react';
 
 const Profile = () => {
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
+    if (!user) return;
     const fetchUserPosts = async () => {
-      if (!user) return;
       try {
         const response = await api.get(`/posts/user/${user.id || user._id}`);
-        // Support paginated model
         setPosts(response.data.posts || response.data);
-      } catch (error) {
-        console.error('Failed to load user posts:', error);
+      } catch {
         toast.error('Failed to load your posts');
       } finally {
         setLoading(false);
       }
     };
-
     fetchUserPosts();
   }, [user]);
 
-  const handleDeletePost = async (postId) => {
-    if (!window.confirm('Are you sure you want to delete this post?')) return;
-
+  const handleDeletePost = async () => {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/posts/${postId}`);
-      setPosts(posts.filter((post) => post._id !== postId));
-      toast.success('Post deleted successfully');
-    } catch (error) {
-      console.error('Failed to delete post:', error);
+      await api.delete(`/posts/${deleteTarget}`);
+      setPosts(posts.filter((p) => p._id !== deleteTarget));
+      toast.success('Post deleted');
+    } catch {
       toast.error('Failed to delete post');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
   if (!user) return null;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
       {/* Profile Header */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden mb-8">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 relative">
-          {/* Avatar Placeholder */}
-          <div className="h-24 w-24 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-extrabold shadow-lg shadow-indigo-500/20">
-            {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+      <div className="bg-surface border border-border rounded-2xl p-5 sm:p-7 mb-8 animate-fade-in">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+          {/* Avatar */}
+          <div className="w-20 h-20 rounded-xl bg-surface-raised border border-border flex items-center justify-center text-3xl font-extrabold text-amber shrink-0">
+            {user.name ? user.name.charAt(0).toUpperCase() : '?'}
           </div>
 
           <div className="flex-1 text-center sm:text-left space-y-2">
-            <h1 className="text-3xl font-bold text-white tracking-tight">{user.name}</h1>
-            <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm text-slate-400">
-              <span className="flex items-center space-x-1">
-                <Mail className="h-4 w-4 text-indigo-400" />
-                <span>{user.email}</span>
-              </span>
-              <span className="flex items-center space-x-1">
-                <Calendar className="h-4 w-4 text-indigo-400" />
-                <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
-              </span>
+            <div className="flex items-center justify-center sm:justify-start gap-2">
+              <h1 className="text-2xl font-bold text-text-primary tracking-tight">{user.name}</h1>
+              {user.role === 'admin' && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-muted text-amber text-xs font-semibold">
+                  <Shield className="h-3 w-3" />
+                  Admin
+                </span>
+              )}
             </div>
-
-            {user.role === 'admin' && (
-              <span className="inline-flex items-center space-x-1 bg-red-500/10 text-red-400 border border-red-500/20 text-xs px-2.5 py-1 rounded-full font-semibold mt-2">
-                <ShieldAlert className="h-3.5 w-3.5" />
-                <span>Administrator</span>
+            <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm text-text-secondary">
+              <span className="flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5 text-text-tertiary" />
+                {user.email}
               </span>
-            )}
+              {user.createdAt && (
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-text-tertiary" />
+                  Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* User Posts Section */}
-      <div className="space-y-6">
-        <h2 className="text-xl font-bold text-white flex items-center space-x-2">
-          <Grid className="h-5 w-5 text-indigo-400" />
-          <span>My Posts ({posts.length})</span>
-        </h2>
+      {/* Posts Section */}
+      <div className="space-y-5">
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-text-primary">
+            <Grid className="h-4 w-4 text-amber" />
+            My Posts
+            {!loading && <span className="text-sm font-normal text-text-tertiary">({posts.length})</span>}
+          </h2>
+          <Link
+            to="/create"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber text-text-inverse text-sm font-semibold hover:bg-amber-hover transition-colors"
+          >
+            <Camera className="h-3.5 w-3.5" />
+            New
+          </Link>
+        </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
-          </div>
+          <Skeleton variant="profile" />
         ) : posts.length === 0 ? (
-          <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-12 text-center">
-            <p className="text-slate-400 font-medium">You haven't posted anything yet</p>
-            <p className="text-slate-500 text-sm mt-1">Publish your first post to see it here</p>
-          </div>
+          <EmptyState
+            icon={Camera}
+            title="No posts yet"
+            description="Your published posts will appear here."
+            actionLabel="Create your first post"
+            actionTo="/create"
+          />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
             {posts.map((post) => (
-              <div key={post._id} className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl hover:border-slate-700 transition duration-200 flex flex-col group">
-                <div className="relative aspect-video bg-slate-950">
+              <div key={post._id} className="bg-surface border border-border rounded-2xl overflow-hidden group hover:border-surface-overlay transition-colors">
+                {/* Image */}
+                <Link to={`/post/${post._id}`} className="block relative aspect-video bg-canvas overflow-hidden">
                   <img
                     src={post.imageUrl}
                     alt={post.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                    loading="lazy"
                   />
-                  <div className="absolute top-3 right-3 flex space-x-2">
-                    <button
-                      onClick={() => handleDeletePost(post._id)}
-                      className="p-2 bg-slate-950/80 text-red-400 hover:text-red-300 rounded-full hover:scale-105 transition border border-slate-800 cursor-pointer"
-                      title="Delete Post"
+                  {/* Actions overlay */}
+                  <div className="absolute top-2.5 right-2.5 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Link
+                      to={`/post/${post._id}/edit`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="p-2 bg-canvas/80 backdrop-blur-sm rounded-lg text-text-secondary hover:text-amber border border-border transition-colors"
+                      title="Edit post"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Edit3 className="h-3.5 w-3.5" />
+                    </Link>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDeleteTarget(post._id);
+                      }}
+                      className="p-2 bg-canvas/80 backdrop-blur-sm rounded-lg text-text-secondary hover:text-danger border border-border transition-colors cursor-pointer"
+                      title="Delete post"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                </div>
+                </Link>
 
-                <div className="p-5 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">{post.title}</h3>
-                    <p className="text-slate-400 text-sm mb-4 line-clamp-2 leading-relaxed">{post.content}</p>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-slate-800 pt-4 text-xs text-slate-500 font-medium">
-                    <span className="flex items-center space-x-1">
-                      <Heart className="h-4 w-4 text-rose-500 fill-rose-500" />
-                      <span>{post.likes?.length || 0} Likes</span>
+                {/* Content */}
+                <div className="p-4">
+                  <Link to={`/post/${post._id}`}>
+                    <h3 className="text-sm font-bold text-text-primary mb-1 line-clamp-1 hover:text-amber transition-colors">
+                      {post.title}
+                    </h3>
+                  </Link>
+                  {post.content && (
+                    <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed mb-3">{post.content}</p>
+                  )}
+                  <div className="flex items-center gap-4 text-xs text-text-tertiary">
+                    <span className="flex items-center gap-1">
+                      <Heart className="h-3.5 w-3.5 text-coral" />
+                      {post.likes?.length || 0}
                     </span>
-                    <span className="flex items-center space-x-1">
-                      <MessageSquare className="h-4 w-4 text-indigo-400" />
-                      <span>{post.comments?.length || 0} Comments</span>
+                    <span className="flex items-center gap-1">
+                      <MessageSquare className="h-3.5 w-3.5 text-amber" />
+                      {post.comments?.length || 0}
                     </span>
                   </div>
                 </div>
@@ -136,6 +170,15 @@ const Profile = () => {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete post"
+        message="This post and all its comments will be permanently removed. This cannot be undone."
+        confirmLabel="Delete Post"
+        onConfirm={handleDeletePost}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 };
