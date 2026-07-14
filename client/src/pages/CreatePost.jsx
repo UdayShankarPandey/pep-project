@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { Image as ImageIcon, Send, X, FileText, Type } from 'lucide-react';
+import { Image as ImageIcon, Send, X, Type, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const CreatePost = () => {
@@ -21,14 +21,12 @@ const CreatePost = () => {
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image must be less than 5MB');
+        toast.error('Image must be under 5 MB');
         return;
       }
       setImageFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
+      reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
@@ -36,113 +34,111 @@ const CreatePost = () => {
   const removeImage = () => {
     setImageFile(null);
     setImagePreview('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title) {
+    if (!title.trim()) {
       toast.error('Title is required');
       return;
     }
     if (!imageFile) {
-      toast.error('An image is required for the post');
+      toast.error('An image is required');
       return;
     }
 
     setIsSubmitting(true);
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('content', content);
+    formData.append('title', title.trim());
+    formData.append('content', content.trim());
     formData.append('image', imageFile);
 
     try {
       await api.post('/posts', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      toast.success('Post created successfully!');
+      toast.success('Post published!');
       navigate('/');
     } catch (error) {
-      const message = error.response?.data?.message || 'Failed to create post';
-      toast.error(message);
+      toast.error(error.response?.data?.message || 'Failed to create post');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        {/* Glow effect */}
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="mb-8 relative">
-          <h2 className="text-3xl font-extrabold text-white tracking-tight">Create a Post</h2>
-          <p className="text-slate-400 mt-2">Share something interesting with the PEP Space community</p>
+    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
+      <div className="bg-surface border border-border rounded-2xl p-5 sm:p-7 animate-fade-in">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-text-primary tracking-tight">New Post</h1>
+          <p className="text-sm text-text-secondary mt-1">Share a visual story with the community</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 relative">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center space-x-1.5">
-              <Type className="h-4 w-4 text-indigo-400" />
-              <span>Post Title</span>
+            <label htmlFor="post-title" className="flex items-center gap-1.5 text-sm font-medium text-text-secondary mb-1.5">
+              <Type className="h-3.5 w-3.5 text-amber" />
+              Title
             </label>
             <input
+              id="post-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition duration-200"
-              placeholder="Give your post a catchy title"
+              className="w-full px-4 py-2.5 bg-canvas border border-border rounded-xl text-sm text-text-primary placeholder-text-tertiary focus:outline-none focus:border-amber/40 focus:ring-1 focus:ring-amber/20 transition-colors"
+              placeholder="Give your post a title"
+              maxLength={300}
               required
             />
+            <div className="text-right text-xs text-text-tertiary mt-1">{title.length}/300</div>
           </div>
 
-          {/* Description */}
+          {/* Content */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center space-x-1.5">
-              <FileText className="h-4 w-4 text-indigo-400" />
-              <span>Description / Content</span>
+            <label htmlFor="post-content" className="flex items-center gap-1.5 text-sm font-medium text-text-secondary mb-1.5">
+              <FileText className="h-3.5 w-3.5 text-amber" />
+              Description <span className="text-text-tertiary font-normal">(optional)</span>
             </label>
             <textarea
+              id="post-content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={4}
-              className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition duration-200 resize-none"
-              placeholder="What is this post about?"
+              className="w-full px-4 py-2.5 bg-canvas border border-border rounded-xl text-sm text-text-primary placeholder-text-tertiary focus:outline-none focus:border-amber/40 focus:ring-1 focus:ring-amber/20 transition-colors resize-none"
+              placeholder="What's this about?"
+              maxLength={10000}
             />
+            <div className="text-right text-xs text-text-tertiary mt-1">{content.length}/10000</div>
           </div>
 
-          {/* Image Upload Area */}
+          {/* Image Upload */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center space-x-1.5">
-              <ImageIcon className="h-4 w-4 text-indigo-400" />
-              <span>Cover Image</span>
+            <label className="flex items-center gap-1.5 text-sm font-medium text-text-secondary mb-1.5">
+              <ImageIcon className="h-3.5 w-3.5 text-amber" />
+              Cover Image
             </label>
 
             {imagePreview ? (
-              <div className="relative rounded-2xl overflow-hidden border border-slate-850 bg-slate-950 group">
-                <img
-                  src={imagePreview}
-                  alt="Upload Preview"
-                  className="w-full max-h-[300px] object-contain mx-auto"
-                />
+              <div className="relative rounded-xl overflow-hidden border border-border bg-canvas">
+                <img src={imagePreview} alt="Preview" className="w-full max-h-72 object-contain mx-auto" />
                 <button
                   type="button"
                   onClick={removeImage}
-                  className="absolute top-3 right-3 p-2 bg-slate-900/90 text-slate-400 hover:text-white rounded-full hover:scale-105 transition border border-slate-800 cursor-pointer"
+                  className="absolute top-3 right-3 p-1.5 bg-canvas/80 backdrop-blur-sm text-text-secondary hover:text-text-primary rounded-lg border border-border transition-colors cursor-pointer"
+                  aria-label="Remove image"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             ) : (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-800 hover:border-indigo-500/50 bg-slate-950/30 hover:bg-slate-950/50 rounded-2xl p-8 text-center cursor-pointer transition duration-200 group"
+                className="border border-dashed border-border hover:border-amber/30 bg-canvas/50 hover:bg-canvas rounded-xl p-8 text-center cursor-pointer transition-colors group"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
               >
                 <input
                   type="file"
@@ -151,31 +147,29 @@ const CreatePost = () => {
                   accept="image/*"
                   className="hidden"
                 />
-                <div className="flex flex-col items-center justify-center space-y-3">
-                  <div className="p-4 bg-slate-900 text-slate-400 group-hover:text-indigo-400 rounded-2xl border border-slate-800 transition duration-200">
-                    <ImageIcon className="h-6 w-6" />
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-xl bg-surface-raised border border-border text-text-tertiary group-hover:text-amber flex items-center justify-center transition-colors">
+                    <ImageIcon className="h-5 w-5" />
                   </div>
-                  <div>
-                    <p className="text-slate-300 font-medium">Click to upload an image</p>
-                    <p className="text-slate-500 text-xs mt-1">Supports PNG, JPG, JPEG (Max 5MB)</p>
-                  </div>
+                  <p className="text-sm text-text-secondary font-medium">Click to upload</p>
+                  <p className="text-xs text-text-tertiary">PNG, JPG, JPEG — Max 5 MB</p>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Submit Button */}
+          {/* Submit */}
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-indigo-500/20 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full bg-amber hover:bg-amber-hover text-text-inverse font-semibold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm"
           >
             {isSubmitting ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <div className="w-5 h-5 border-2 border-text-inverse border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <>
-                <span>Publish Post</span>
-                <Send className="h-5 w-5" />
+                <Send className="h-4 w-4" />
+                Publish
               </>
             )}
           </button>
