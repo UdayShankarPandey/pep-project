@@ -1,0 +1,77 @@
+import React from 'react';
+
+const Skeleton = ({ variant = 'post', count = 1 }) => {
+  if (variant === 'post') {
+    return Array.from({ length: count }).map((_, i) => (
+      <div key={i} className="bg-surface rounded-2xl overflow-hidden border border-border">
+        {/* Image skeleton */}
+        <div className="skeleton w-full aspect-16/10"></div>
+        {/* Content skeleton */}
+        <div className="p-5 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="skeleton w-9 h-9 rounded-lg shrink-0"></div>
+            <div className="space-y-1.5 flex-1">
+              <div className="skeleton h-3.5 w-24"></div>
+              <div className="skeleton h-2.5 w-16"></div>
+            </div>
+          </div>
+          <div className="skeleton h-5 w-3/4"></div>
+          <div className="skeleton h-3.5 w-full"></div>
+          <div className="skeleton h-3.5 w-2/3"></div>
+        </div>
+      </div>
+    ));
+  }
+
+  if (variant === 'detail') {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+        <div className="skeleton w-full aspect-video rounded-2xl"></div>
+        <div className="space-y-3 px-1">
+          <div className="skeleton h-8 w-3/4"></div>
+          <div className="flex items-center gap-3">
+            <div className="skeleton w-10 h-10 rounded-lg"></div>
+            <div className="space-y-1.5">
+              <div className="skeleton h-3.5 w-28"></div>
+              <div className="skeleton h-2.5 w-20"></div>
+            </div>
+          </div>
+          <div className="skeleton h-4 w-full"></div>
+          <div className="skeleton h-4 w-full"></div>
+          <div className="skeleton h-4 w-1/2"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === 'profile') {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="bg-surface rounded-2xl border border-border p-6">
+          <div className="flex items-center gap-5">
+            <div className="skeleton w-20 h-20 rounded-xl"></div>
+            <div className="space-y-2 flex-1">
+              <div className="skeleton h-6 w-40"></div>
+              <div className="skeleton h-3.5 w-56"></div>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-surface rounded-2xl overflow-hidden border border-border">
+              <div className="skeleton w-full aspect-video"></div>
+              <div className="p-4 space-y-2">
+                <div className="skeleton h-4 w-3/4"></div>
+                <div className="skeleton h-3 w-1/2"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+export default Skeleton;
