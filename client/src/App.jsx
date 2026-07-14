@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 // Components
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 
 // Pages
 import Home from './pages/Home';
@@ -13,20 +14,26 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import CreatePost from './pages/CreatePost';
+import PostDetail from './pages/PostDetail';
+import EditPost from './pages/EditPost';
+import UserProfile from './pages/UserProfile';
+import AdminUsers from './pages/AdminUsers';
 
 const App = () => {
   return (
     <Router>
       <AuthProvider>
-        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+        <div className="min-h-screen bg-canvas text-text-primary flex flex-col font-sans">
           <Navbar />
           
-          <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <main className="flex-1">
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/post/:id" element={<PostDetail />} />
+              <Route path="/user/:id" element={<UserProfile />} />
 
               {/* Protected Routes */}
               <Route
@@ -38,21 +45,40 @@ const App = () => {
                 }
               />
               <Route
-                path="/create-post"
+                path="/create"
                 element={
                   <ProtectedRoute>
                     <CreatePost />
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/post/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <EditPost />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Admin Routes */}
+              <Route
+                path="/admin/users"
+                element={
+                  <AdminRoute>
+                    <AdminUsers />
+                  </AdminRoute>
+                }
+              />
               
-              {/* 404 Route */}
+              {/* 404 */}
               <Route
                 path="*"
                 element={
-                  <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
-                    <h2 className="text-4xl font-extrabold text-white">404 - Page Not Found</h2>
-                    <p className="text-slate-400">The page you are looking for does not exist.</p>
+                  <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 text-center animate-fade-in">
+                    <h2 className="text-3xl font-bold text-text-primary mb-2">404</h2>
+                    <p className="text-text-secondary mb-6">This page doesn't exist.</p>
+                    <a href="/" className="text-amber hover:underline font-medium text-sm">← Back to feed</a>
                   </div>
                 }
               />
@@ -63,15 +89,22 @@ const App = () => {
           position="bottom-right"
           toastOptions={{
             style: {
-              background: '#0f172a',
-              color: '#f8fafc',
-              border: '1px solid #1e293b',
-              borderRadius: '1rem',
+              background: '#1a1a1f',
+              color: '#F5F0E8',
+              border: '1px solid #2a2a30',
+              borderRadius: '12px',
+              fontSize: '14px',
             },
             success: {
               iconTheme: {
-                primary: '#6366f1',
-                secondary: '#f8fafc',
+                primary: '#E8A838',
+                secondary: '#111113',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#D35454',
+                secondary: '#111113',
               },
             },
           }}

@@ -1,91 +1,162 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, PlusSquare, User, LogOut, LogIn, UserPlus, Compass } from 'lucide-react';
+import { Home, PlusSquare, User, LogOut, LogIn, UserPlus, Menu, X, Shield, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
-    toast.success('Logged out successfully');
+    toast.success('Logged out');
     navigate('/login');
+    setMobileMenuOpen(false);
   };
 
+  const isActive = (path) => location.pathname === path;
+
+  const navLinkClass = (path) =>
+    `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
+      isActive(path)
+        ? 'text-amber bg-amber-muted'
+        : 'text-text-secondary hover:text-text-primary hover:bg-surface-raised'
+    }`;
+
+  const closeMobile = () => setMobileMenuOpen(false);
+
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/80 border-b border-slate-800">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
+    <nav className="sticky top-0 z-50 bg-canvas/90 backdrop-blur-md border-b border-border" role="navigation" aria-label="Main navigation">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="flex justify-between h-14 items-center">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-2 rounded-xl text-white shadow-md shadow-indigo-500/20">
-              <Compass className="h-6 w-6" />
+          <Link to="/" className="flex items-center gap-2 group" onClick={closeMobile}>
+            <div className="w-8 h-8 rounded-lg bg-amber flex items-center justify-center transition-transform duration-150 group-hover:scale-105">
+              <Camera className="h-4 w-4 text-text-inverse" strokeWidth={2.5} />
             </div>
-            <span className="text-xl font-extrabold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent tracking-tight">
-              PEP Space
+            <span className="text-lg font-extrabold text-text-primary tracking-tight">
+              Link<span className="text-amber"> Click</span>
             </span>
           </Link>
 
-          {/* Navigation Links */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            <Link
-              to="/"
-              className="text-slate-300 hover:text-white flex items-center space-x-1.5 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition duration-200"
-            >
-              <Home className="h-5 w-5" />
-              <span className="hidden md:inline text-sm font-medium">Home</span>
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-1">
+            <Link to="/" className={navLinkClass('/')}>
+              <Home className="h-4 w-4" />
+              <span>Feed</span>
             </Link>
 
             {user ? (
               <>
-                <Link
-                  to="/create-post"
-                  className="text-slate-300 hover:text-white flex items-center space-x-1.5 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition duration-200"
-                >
-                  <PlusSquare className="h-5 w-5" />
-                  <span className="hidden md:inline text-sm font-medium">Create</span>
+                <Link to="/create" className={navLinkClass('/create')}>
+                  <PlusSquare className="h-4 w-4" />
+                  <span>Create</span>
                 </Link>
 
-                <Link
-                  to="/profile"
-                  className="text-slate-300 hover:text-white flex items-center space-x-1.5 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition duration-200"
-                >
-                  <User className="h-5 w-5" />
-                  <span className="hidden md:inline text-sm font-medium">Profile</span>
+                <Link to="/profile" className={navLinkClass('/profile')}>
+                  <User className="h-4 w-4" />
+                  <span>Profile</span>
                 </Link>
+
+                {user.role === 'admin' && (
+                  <Link to="/admin/users" className={navLinkClass('/admin/users')}>
+                    <Shield className="h-4 w-4" />
+                    <span>Admin</span>
+                  </Link>
+                )}
+
+                <div className="w-px h-6 bg-border mx-1"></div>
 
                 <button
                   onClick={handleLogout}
-                  className="text-red-400 hover:text-red-300 flex items-center space-x-1.5 px-3 py-2 rounded-lg hover:bg-red-500/10 transition duration-200 cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-danger hover:bg-danger-muted transition-colors duration-150 cursor-pointer"
                 >
-                  <LogOut className="h-5 w-5" />
-                  <span className="hidden md:inline text-sm font-medium">Logout</span>
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
                 </button>
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  className="text-slate-300 hover:text-white flex items-center space-x-1.5 px-3 py-2 rounded-lg hover:bg-slate-800/50 transition duration-200"
-                >
-                  <LogIn className="h-5 w-5" />
-                  <span className="text-sm font-medium">Login</span>
+                <Link to="/login" className={navLinkClass('/login')}>
+                  <LogIn className="h-4 w-4" />
+                  <span>Login</span>
                 </Link>
 
                 <Link
                   to="/register"
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white flex items-center space-x-1.5 px-4 py-2 rounded-xl transition duration-200 shadow-md shadow-indigo-500/20"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-amber text-text-inverse hover:bg-amber-hover transition-colors duration-150"
                 >
-                  <UserPlus className="h-5 w-5" />
-                  <span className="text-sm font-medium">Register</span>
+                  <UserPlus className="h-4 w-4" />
+                  <span>Sign Up</span>
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-raised transition-colors cursor-pointer"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-border bg-surface animate-slide-up">
+          <div className="px-4 py-3 space-y-1">
+            <Link to="/" className={navLinkClass('/')} onClick={closeMobile}>
+              <Home className="h-4 w-4" />
+              <span>Feed</span>
+            </Link>
+
+            {user ? (
+              <>
+                <Link to="/create" className={navLinkClass('/create')} onClick={closeMobile}>
+                  <PlusSquare className="h-4 w-4" />
+                  <span>Create Post</span>
+                </Link>
+                <Link to="/profile" className={navLinkClass('/profile')} onClick={closeMobile}>
+                  <User className="h-4 w-4" />
+                  <span>My Profile</span>
+                </Link>
+                {user.role === 'admin' && (
+                  <Link to="/admin/users" className={navLinkClass('/admin/users')} onClick={closeMobile}>
+                    <Shield className="h-4 w-4" />
+                    <span>Admin Panel</span>
+                  </Link>
+                )}
+                <div className="border-t border-border my-2"></div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-danger hover:bg-danger-muted transition-colors cursor-pointer"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className={navLinkClass('/login')} onClick={closeMobile}>
+                  <LogIn className="h-4 w-4" />
+                  <span>Login</span>
+                </Link>
+                <Link to="/register" className={navLinkClass('/register')} onClick={closeMobile}>
+                  <UserPlus className="h-4 w-4" />
+                  <span>Sign Up</span>
                 </Link>
               </>
             )}
           </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 };
