@@ -5,13 +5,21 @@ import {
   getUsers,
   getUserById,
   updateUser,
-  deleteUser
+  deleteUser,
+  getUserProfile,
+  toggleLinkUser
 } from '../controllers/user.controller.js';
 
 const router = Router();
 
-// Protect all user routes — must be logged in AND be admin
+// Protect all user routes
 router.use(protect);
+
+// Public user routes (for logged in users)
+router.get('/:id/profile', getUserProfile);
+router.post('/:id/link', toggleLinkUser);
+
+// Admin only routes
 router.use(authorize('admin'));
 
 // Routes for /api/users

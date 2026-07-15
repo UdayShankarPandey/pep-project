@@ -316,3 +316,35 @@ export const deleteComment = async (req, res) => {
     res.status(500).json({ message: 'Failed to delete comment.' });
   }
 };
+
+// Get posts liked by a user
+export const getLikedPostsByUser = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const startIndex = (page - 1) * limit;
+    const userId = req.params.userId;
+
+    const query = { likes: userId };
+
+    const total = await Post.countDocuments(query);
+    const posts = await Post.find(query)
+      .populate('user', 'name role')
+      .populate('comments.user', 'name role')
+      .sort({ createdAt: -1 })
+      .skip(startIndex)
+      .limit(limit);
+
+    res.status(200).json({
+      success: true,
+      count: posts.length,
+      totalPosts: total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      posts
+    });
+  } catch (error) {
+    console.error('Get Liked Posts By User Error:', error.message);
+    res.status(500).json({ message: 'Failed to fetch liked posts.' });
+  }
+};

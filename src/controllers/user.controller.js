@@ -115,3 +115,59 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Get a user's public profile
+export const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id, '-password -role -email');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    console.error('Get User Profile Error:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Toggle Link (Follow/Unfollow)
+export const toggleLinkUser = async (req, res) => {
+  try {
+    const targetUserId = req.params.id;
+    const currentUserId = req.user.id;
+
+    if (targetUserId === currentUserId) {
+      return res.status(400).json({ message: 'You cannot link to yourself' });
+    }
+
+    const targetUser = await User.findById(targetUserId);
+    const currentUser = await User.findById(currentUserId);
+
+    if (!targetUser || !currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isLinked = currentUser.links.includes(targetUserId);
+
+    if (isLinked) {
+      // Unlink
+      currentUser.links = currentUser.links.filter(id => id.toString() !== targetUserId);
+      targetUser.linkedBy = targetUser.linkedBy.filter(id => id.toString() !== currentUserId);
+    } else {
+      // Link
+      currentUser.links.push(targetUserId);
+      targetUser.linkedBy.push(currentUserId);
+    }
+
+    await currentUser.save();
+    await targetUser.save();
+
+    res.status(200).json({ 
+      message: isLinked ? 'Unlinked successfully' : 'Linked successfully',
+      isLinked: !isLinked
+    });
+  } catch (error) {
+    console.error('Toggle Link Error:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

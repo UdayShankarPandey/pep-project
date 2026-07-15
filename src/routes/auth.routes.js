@@ -1,8 +1,26 @@
 import { Router } from 'express';
-import { register, login, getMe } from '../controllers/auth.controller.js';
+import { register, login, getMe, updateProfilePic } from '../controllers/auth.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
+import multer from 'multer';
+
 const router = Router();
+
+// Configure multer with memory storage and image-only file filter
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 // Route for register: POST /api/auth/register
 router.post('/register', register);
@@ -13,5 +31,7 @@ router.post('/login', login);
 // Route for getting current user profile: GET /api/auth/me
 router.get('/me', protect, getMe);
 
-export default router;
+// Route for updating profile pic: PUT /api/auth/me/profile-pic
+router.put('/me/profile-pic', protect, upload.single('image'), updateProfilePic);
 
+export default router;

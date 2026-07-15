@@ -9,7 +9,8 @@ import {
   deletePost,
   likePost,
   commentPost,
-  deleteComment
+  deleteComment,
+  getLikedPostsByUser
 } from '../controllers/post.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
@@ -37,6 +38,8 @@ router.get('/', getPosts);
 
 // Get posts by a specific user (must be before /:id to avoid 'user' matching as an ID)
 router.get('/user/:userId', getPostsByUser);
+// Get posts liked by a specific user
+router.get('/user/:userId/liked', getLikedPostsByUser);
 
 router.get('/:id', getPostById);
 router.put('/:id', protect, upload.single('image'), updatePost);

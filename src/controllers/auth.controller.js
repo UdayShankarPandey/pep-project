@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import imagekit from '../config/imagekit.js';
 
 // Helper function to generate JWT
 const generateToken = (id) => {
@@ -95,5 +96,36 @@ export const getMe = async (req, res) => {
   } catch (error) {
     console.error('GetMe Error:', error.message);
     res.status(500).json({ message: 'Server error fetching profile.' });
+  }
+};
+
+// Update profile picture
+export const updateProfilePic = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded.' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const result = await imagekit.files.upload({
+      file: req.file.buffer.toString('base64'),
+      fileName: `avatar-${Date.now()}-${req.file.originalname}`,
+      folder: '/avatars'
+    });
+
+    user.profilePicUrl = result.url;
+    await user.save();
+
+    res.status(200).json({
+      message: 'Profile picture updated successfully.',
+      profilePicUrl: user.profilePicUrl
+    });
+  } catch (error) {
+    console.error('Profile Pic Upload Error:', error.message);
+    res.status(500).json({ message: 'Failed to update profile picture.' });
   }
 };
