@@ -1,44 +1,87 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
-import { ArrowLeft, Calendar, Shield } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { ArrowLeft, Calendar, Shield, Link as LinkIcon, Heart, Grid, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PostCard from '../components/PostCard';
 import Pagination from '../components/Pagination';
 import Skeleton from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
-import { Camera } from 'lucide-react';
 
 const UserProfile = () => {
   const { id } = useParams();
-  const [posts, setPosts] = useState([]);
+  const { user: currentUser } = useAuth();
   const [userInfo, setUserInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState([]);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalPosts, setTotalPosts] = useState(0);
+  const [activeTab, setActiveTab] = useState('posts');
+  const [isLinked, setIsLinked] = useState(false);
+  const [isLinking, setIsLinking] = useState(false);
 
   useEffect(() => {
-    fetchUserPosts(1);
-    setPage(1);
+    fetchUser();
+    // eslint-disable-next-line
   }, [id]);
 
-  const fetchUserPosts = async (p) => {
-    setLoading(true);
+  useEffect(() => {
+    fetchPosts(1);
+    setPage(1);
+    // eslint-disable-next-line
+  }, [id, activeTab]);
+
+  const fetchUser = async () => {
+    setLoadingUser(true);
     try {
-      const response = await api.get(`/posts/user/${id}?page=${p}&limit=12`);
-      const fetchedPosts = response.data.posts || [];
-      setPosts(fetchedPosts);
-      setTotalPages(response.data.totalPages || 1);
-      setTotalPosts(response.data.totalPosts || 0);
-      // Infer user info from the first post's populated user field
-      if (fetchedPosts.length > 0 && fetchedPosts[0].user) {
-        setUserInfo(fetchedPosts[0].user);
+      const response = await api.get(`/users/${id}/profile`);
+      setUserInfo(response.data);
+      if (currentUser && response.data.linkedBy) {
+        setIsLinked(response.data.linkedBy.includes(currentUser.id || currentUser._id));
       }
     } catch {
-      toast.error('Failed to load user posts');
+      toast.error('Failed to load user profile');
     } finally {
-      setLoading(false);
+      setLoadingUser(false);
+    }
+  };
+
+  const fetchPosts = async (p) => {
+    setLoadingPosts(true);
+    try {
+      const endpoint = activeTab === 'posts' ? `/posts/user/${id}?page=${p}&limit=12` : `/posts/user/${id}/liked?page=${p}&limit=12`;
+      const response = await api.get(endpoint);
+      setPosts(response.data.posts || []);
+      setTotalPages(response.data.totalPages || 1);
+      setTotalPosts(response.data.totalPosts || 0);
+    } catch {
+      toast.error('Failed to load posts');
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  const handleToggleLink = async () => {
+    setIsLinking(true);
+    try {
+      const response = await api.post(`/users/${id}/link`);
+      setIsLinked(response.data.isLinked);
+      toast.success(response.data.message);
+      
+      // Update link count
+      setUserInfo(prev => ({
+        ...prev,
+        linkedBy: response.data.isLinked 
+          ? [...(prev.linkedBy || []), currentUser.id || currentUser._id]
+          : (prev.linkedBy || []).filter(linkId => linkId !== (currentUser.id || currentUser._id))
+      }));
+    } catch {
+      toast.error('Failed to link user');
+    } finally {
+      setIsLinking(false);
     }
   };
 
@@ -50,9 +93,11 @@ const UserProfile = () => {
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
-    fetchUserPosts(newPage);
+    fetchPosts(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const isSelf = currentUser && (currentUser.id === id || currentUser._id === id);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -61,17 +106,21 @@ const UserProfile = () => {
         Feed
       </Link>
 
-      {loading && !userInfo ? (
+      {loadingUser ? (
         <Skeleton variant="profile" />
-      ) : (
+      ) : userInfo ? (
         <div className="animate-fade-in">
           {/* User Header */}
-          {userInfo && (
-            <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6 mb-7">
+          <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6 mb-7">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-5">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-surface-raised border border-border flex items-center justify-center text-xl font-bold text-amber shrink-0">
-                  {userInfo.name ? userInfo.name.charAt(0).toUpperCase() : '?'}
-                </div>
+                {userInfo.profilePicUrl ? (
+                  <img src={userInfo.profilePicUrl} alt={userInfo.name} className="w-16 h-16 rounded-xl object-cover border border-border shrink-0" />
+                ) : (
+                  <div className="w-16 h-16 rounded-xl bg-surface-raised border border-border flex items-center justify-center text-xl font-bold text-amber shrink-0">
+                    {userInfo.name ? userInfo.name.charAt(0).toUpperCase() : '?'}
+                  </div>
+                )}
                 <div>
                   <div className="flex items-center gap-2">
                     <h1 className="text-xl font-bold text-text-primary">{userInfo.name}</h1>
@@ -82,24 +131,66 @@ const UserProfile = () => {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-text-secondary">
-                    {totalPosts} post{totalPosts !== 1 ? 's' : ''} shared
-                  </p>
+                  <div className="flex flex-col text-sm text-text-secondary mt-1 gap-1">
+                    <span>{userInfo.linkedBy?.length || 0} Links</span>
+                    {userInfo.createdAt && (
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="h-3 w-3 text-text-tertiary" />
+                        Joined {new Date(userInfo.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
+              
+              {!isSelf && currentUser && (
+                <button
+                  onClick={handleToggleLink}
+                  disabled={isLinking}
+                  className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 group cursor-pointer ${
+                    isLinked 
+                    ? 'bg-surface-raised text-text-primary border border-border hover:border-danger hover:text-danger hover:bg-danger-muted' 
+                    : 'bg-amber text-text-inverse hover:bg-amber-hover'
+                  }`}
+                >
+                  <LinkIcon className="h-4 w-4" />
+                  <span className="group-hover:hidden">{isLinked ? 'Linked' : 'Link'}</span>
+                  <span className="hidden group-hover:inline">{isLinked ? 'Unlink' : 'Link'}</span>
+                </button>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Tabs */}
+          <div className="flex items-center gap-4 border-b border-border mb-6">
+            <button
+              onClick={() => setActiveTab('posts')}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
+                activeTab === 'posts' ? 'border-amber text-amber' : 'border-transparent text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              Posts
+            </button>
+            <button
+              onClick={() => setActiveTab('liked')}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
+                activeTab === 'liked' ? 'border-amber text-amber' : 'border-transparent text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              Liked Posts
+            </button>
+          </div>
 
           {/* Posts */}
-          {loading ? (
+          {loadingPosts ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               <Skeleton variant="post" count={6} />
             </div>
           ) : posts.length === 0 ? (
             <EmptyState
-              icon={Camera}
-              title="No posts yet"
-              description="This user hasn't shared any posts."
+              icon={activeTab === 'posts' ? Camera : Heart}
+              title={activeTab === 'posts' ? "No posts yet" : "No liked posts"}
+              description={activeTab === 'posts' ? "This user hasn't shared any posts." : "This user hasn't liked any posts."}
             />
           ) : (
             <>
@@ -108,10 +199,14 @@ const UserProfile = () => {
                   <PostCard key={post._id} post={post} onLikeUpdate={handleLikeUpdate} />
                 ))}
               </div>
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+              {totalPages > 1 && (
+                <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+              )}
             </>
           )}
         </div>
+      ) : (
+        <EmptyState title="User not found" description="The user you are looking for does not exist." />
       )}
     </div>
   );

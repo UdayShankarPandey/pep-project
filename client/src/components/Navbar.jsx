@@ -70,13 +70,22 @@ const Navbar = () => {
 
                 <div className="w-px h-6 bg-border mx-1"></div>
 
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-danger hover:bg-danger-muted transition-colors duration-150 cursor-pointer"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
-                </button>
+                <div className="flex items-center gap-1 pl-1">
+                  {user.profilePicUrl ? (
+                    <img src={user.profilePicUrl} alt={user.name} className="w-7 h-7 rounded-full object-cover border border-border shrink-0" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-surface-raised border border-border flex items-center justify-center text-xs font-bold text-amber shrink-0">
+                      {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                    </div>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-danger hover:bg-danger-muted transition-colors duration-150 cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </button>
+                </div>
               </>
             ) : (
               <>
