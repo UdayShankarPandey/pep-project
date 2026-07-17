@@ -7,6 +7,7 @@ import userRoutes from './routes/user.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import postRoutes from './routes/post.routes.js';
+import healthRoutes from './routes/health.routes.js';
 import errorMiddleware from './middleware/error.middleware.js';
 import morgan from 'morgan';
 import { morganStream } from './utils/logger.js';
@@ -48,14 +49,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/posts', postRoutes);
 
-// Basic health check route
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'UP',
-    timestamp: new Date(),
-    message: 'Server is healthy'
-  });
-});
+// Health check routes
+app.use('/health', healthRoutes);
 
 // Root route
 app.get('/', (req, res) => {
