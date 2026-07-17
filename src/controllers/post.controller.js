@@ -47,7 +47,7 @@ export const createPost = async (req, res) => {
       post
     });
   } catch (error) {
-    logger.error('Create Post Error:', error);
+    logger.error("Create Post Error:", { error });
     res.status(500).json({ message: 'Failed to create post.' });
   }
 };
@@ -77,7 +77,7 @@ export const getPosts = async (req, res) => {
       totalPosts: total
     });
   } catch (error) {
-    logger.error('Get Posts Error:', error.message);
+    logger.error(`Get Posts Error: ${error.message}`);
     res.status(500).json({ message: 'Failed to retrieve posts.' });
   }
 };
@@ -94,7 +94,7 @@ export const getPostById = async (req, res) => {
     }
     res.status(200).json(post);
   } catch (error) {
-    logger.error('Get Post Error:', error.message);
+    logger.error(`Get Post Error: ${error.message}`);
     res.status(500).json({ message: 'Failed to retrieve post.' });
   }
 };
@@ -124,7 +124,7 @@ export const getPostsByUser = async (req, res) => {
       totalPosts: total
     });
   } catch (error) {
-    logger.error('Get User Posts Error:', error.message);
+    logger.error(`Get User Posts Error: ${error.message}`);
     res.status(500).json({ message: 'Failed to retrieve user posts.' });
   }
 };
@@ -154,7 +154,7 @@ export const updatePost = async (req, res) => {
         try {
           await imagekit.files.deleteFile(post.imageFileId);
         } catch (ikError) {
-          logger.error('Failed to delete old image from ImageKit:', ikError.message);
+          logger.error(`Failed to delete old image from ImageKit: ${ikError.message}`);
         }
       }
 
@@ -174,7 +174,7 @@ export const updatePost = async (req, res) => {
       post: updatedPost
     });
   } catch (error) {
-    logger.error('Update Post Error:', error.message);
+    logger.error(`Update Post Error: ${error.message}`);
     res.status(500).json({ message: 'Failed to update post.' });
   }
 };
@@ -198,7 +198,7 @@ export const deletePost = async (req, res) => {
       try {
         await imagekit.files.deleteFile(post.imageFileId);
       } catch (ikError) {
-        logger.error('Failed to delete image from ImageKit:', ikError.message);
+        logger.error(`Failed to delete image from ImageKit: ${ikError.message}`);
         // We log the error but don't block post deletion in DB if it was already deleted or not found
       }
     }
@@ -206,7 +206,7 @@ export const deletePost = async (req, res) => {
     await post.deleteOne();
     res.status(200).json({ message: 'Post deleted successfully.' });
   } catch (error) {
-    logger.error('Delete Post Error:', error.message);
+    logger.error(`Delete Post Error: ${error.message}`);
     res.status(500).json({ message: 'Failed to delete post.' });
   }
 };
@@ -238,7 +238,7 @@ export const likePost = async (req, res) => {
       likes: post.likes
     });
   } catch (error) {
-    logger.error('Like Post Error:', error.message);
+    logger.error(`Like Post Error: ${error.message}`);
     res.status(500).json({ message: 'Failed to toggle like on post.' });
   }
 };
@@ -278,7 +278,7 @@ export const commentPost = async (req, res) => {
       post: updatedPost
     });
   } catch (error) {
-    logger.error('Comment Post Error:', error.message);
+    logger.error(`Comment Post Error: ${error.message}`);
     res.status(500).json({ message: 'Failed to add comment.' });
   }
 };
@@ -313,7 +313,7 @@ export const deleteComment = async (req, res) => {
       comments: post.comments
     });
   } catch (error) {
-    logger.error('Delete Comment Error:', error.message);
+    logger.error(`Delete Comment Error: ${error.message}`);
     res.status(500).json({ message: 'Failed to delete comment.' });
   }
 };
@@ -345,7 +345,7 @@ export const getLikedPostsByUser = async (req, res) => {
       posts
     });
   } catch (error) {
-    logger.error('Get Liked Posts By User Error:', error.message);
+    logger.error(`Get Liked Posts By User Error: ${error.message}`);
     res.status(500).json({ message: 'Failed to fetch liked posts.' });
   }
 };
