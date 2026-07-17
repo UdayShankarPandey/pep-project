@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import imagekit from '../config/imagekit.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import AppError from '../errors/AppError.js';
+import apiResponse from '../utils/apiResponse.js';
 
 // Helper function to generate JWT
 const generateToken = (id) => {
@@ -36,8 +37,7 @@ export const register = asyncHandler(async (req, res) => {
 
   const token = generateToken(user._id);
 
-  res.status(201).json({
-    message: 'User registered successfully.',
+  return apiResponse(res, 201, 'User registered successfully.', {
     token,
     user: {
       id: user._id,
@@ -65,8 +65,7 @@ export const login = asyncHandler(async (req, res) => {
 
   const token = generateToken(user._id);
 
-  res.status(200).json({
-    message: 'Login successful.',
+  return apiResponse(res, 200, 'Login successful.', {
     token,
     user: {
       id: user._id,
@@ -83,7 +82,7 @@ export const getMe = asyncHandler(async (req, res) => {
   if (!user) {
     throw new AppError('User not found.', 404);
   }
-  res.status(200).json(user);
+  return apiResponse(res, 200, 'User profile fetched successfully.', user);
 });
 
 // Update profile picture
@@ -106,8 +105,7 @@ export const updateProfilePic = asyncHandler(async (req, res) => {
   user.profilePicUrl = result.url;
   await user.save();
 
-  res.status(200).json({
-    message: 'Profile picture updated successfully.',
+  return apiResponse(res, 200, 'Profile picture updated successfully.', {
     profilePicUrl: user.profilePicUrl
   });
 });
