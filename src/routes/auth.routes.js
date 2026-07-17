@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { register, login, getMe, updateProfilePic } from '../controllers/auth.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
+import validate from '../middleware/validate.middleware.js';
+import { registerSchema, loginSchema } from '../validators/auth.validator.js';
 
 import multer from 'multer';
 
@@ -23,10 +25,10 @@ const upload = multer({
 });
 
 // Route for register: POST /api/auth/register
-router.post('/register', register);
+router.post('/register', validate(registerSchema), register);
 
 // Route for login: POST /api/auth/login
-router.post('/login', login);
+router.post('/login', validate(loginSchema), login);
 
 // Route for getting current user profile: GET /api/auth/me
 router.get('/me', protect, getMe);

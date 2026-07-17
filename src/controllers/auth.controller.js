@@ -17,11 +17,6 @@ const generateToken = (id) => {
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
-  // Validate request
-  if (!name || !email || !password) {
-    throw new AppError('All fields (name, email, password) are required.', 400);
-  }
-
   // Check if user already exists
   const userExists = await User.findOne({ email });
   if (userExists) {
@@ -53,10 +48,6 @@ export const register = asyncHandler(async (req, res) => {
 // Login user
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-
-  if (!email || !password) {
-    throw new AppError('Please provide both email and password.', 400);
-  }
 
   // Find the user by email
   const user = await User.findOne({ email });
