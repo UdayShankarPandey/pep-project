@@ -11,6 +11,7 @@ import healthRoutes from './routes/health.routes.js';
 import errorMiddleware from './middleware/error.middleware.js';
 import morgan from 'morgan';
 import { morganStream } from './utils/logger.js';
+import { requestIdMiddleware } from './middleware/requestId.middleware.js';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger.js';
 
@@ -18,8 +19,12 @@ const app = express();
 
 // ─── Security Middleware ────────────────────────────────────────────────────
 
-// HTTP request logging
-app.use(morgan('combined', { stream: morganStream }));
+// Request ID assignment
+app.use(requestIdMiddleware);
+
+// HTTP request logging (Custom Morgan format with Request ID)
+morgan.token('id', (req) => req.requestId || '-');
+app.use(morgan('[:id] :method :url :status :res[content-length] - :response-time ms', { stream: morganStream }));
 
 // Helmet — sets secure HTTP headers (XSS, clickjacking, MIME sniffing, etc.)
 app.use(helmet());
