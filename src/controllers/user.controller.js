@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger.js';
 import User from '../models/User.js';
 
 // Create a new user (admin only)
@@ -34,7 +35,7 @@ export const createUser = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Create User Error:', error.message);
+    logger.error('Create User Error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -45,7 +46,7 @@ export const getUsers = async (req, res) => {
     const users = await User.find({}, '-password'); // Exclude password from the returned docs
     res.status(200).json(users);
   } catch (error) {
-    console.error('Get Users Error:', error.message);
+    logger.error('Get Users Error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -59,7 +60,7 @@ export const getUserById = async (req, res) => {
     }
     res.status(200).json(user);
   } catch (error) {
-    console.error('Get User Error:', error.message);
+    logger.error('Get User Error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -97,7 +98,7 @@ export const updateUser = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Update User Error:', error.message);
+    logger.error('Update User Error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -111,7 +112,7 @@ export const deleteUser = async (req, res) => {
     }
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
-    console.error('Delete User Error:', error.message);
+    logger.error('Delete User Error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -125,7 +126,7 @@ export const getUserProfile = async (req, res) => {
     }
     res.status(200).json(user);
   } catch (error) {
-    console.error('Get User Profile Error:', error.message);
+    logger.error('Get User Profile Error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -167,7 +168,7 @@ export const toggleLinkUser = async (req, res) => {
       isLinked: !isLinked
     });
   } catch (error) {
-    console.error('Toggle Link Error:', error.message);
+    logger.error('Toggle Link Error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };

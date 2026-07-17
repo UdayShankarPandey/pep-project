@@ -8,10 +8,15 @@ import authRoutes from './routes/auth.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import postRoutes from './routes/post.routes.js';
 import errorMiddleware from './middleware/error.middleware.js';
+import morgan from 'morgan';
+import { morganStream } from './utils/logger.js';
 
 const app = express();
 
 // ─── Security Middleware ────────────────────────────────────────────────────
+
+// HTTP request logging
+app.use(morgan('combined', { stream: morganStream }));
 
 // Helmet — sets secure HTTP headers (XSS, clickjacking, MIME sniffing, etc.)
 app.use(helmet());

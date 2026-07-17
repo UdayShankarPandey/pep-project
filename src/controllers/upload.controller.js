@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger.js';
 import imagekit from '../config/imagekit.js';
 
 export const uploadImage = async (req, res) => {
@@ -22,7 +23,7 @@ export const uploadImage = async (req, res) => {
       size: result.size
     });
   } catch (error) {
-    console.error('ImageKit Upload Error:', error);
+    logger.error('ImageKit Upload Error:', error);
     res.status(500).json({
       message: 'Failed to upload image.'
     });
