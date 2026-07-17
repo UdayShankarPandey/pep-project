@@ -10,6 +10,8 @@ import postRoutes from './routes/post.routes.js';
 import errorMiddleware from './middleware/error.middleware.js';
 import morgan from 'morgan';
 import { morganStream } from './utils/logger.js';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './docs/swagger.js';
 
 const app = express();
 
@@ -35,6 +37,9 @@ app.use(urlencoded({ extended: true, limit: '1mb' }));
 app.use(mongoSanitize);
 
 // ─── API Routes ─────────────────────────────────────────────────────────────
+
+// Swagger Documentation
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Auth routes get a stricter rate limiter (brute-force protection)
 app.use('/api/auth', authLimiter, authRoutes);
