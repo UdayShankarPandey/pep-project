@@ -7,6 +7,7 @@ import userRoutes from './routes/user.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import postRoutes from './routes/post.routes.js';
+import errorMiddleware from './middleware/error.middleware.js';
 
 const app = express();
 
@@ -56,16 +57,7 @@ app.use((req, res) => {
   res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
 });
 
-// Global error handler — never leak stack traces or internal details to the client
-app.use((err, req, res, next) => {
-  console.error('Unhandled Error:', err.stack);
-
-  const statusCode = err.status || 500;
-  const message = process.env.NODE_ENV === 'production'
-    ? 'Internal Server Error'
-    : err.message || 'Internal Server Error';
-
-  res.status(statusCode).json({ message });
-});
+// Global error handler
+app.use(errorMiddleware);
 
 export default app;

@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import imagekit from '../config/imagekit.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import AppError from '../errors/AppError.js';
 
 // Helper function to generate JWT
 const generateToken = (id) => {
@@ -10,122 +12,102 @@ const generateToken = (id) => {
 };
 
 // Register a new user
-export const register = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+export const register = asyncHandler(async (req, res) => {
+  const { name, email, password } = req.body;
 
-    // Validate request
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'All fields (name, email, password) are required.' });
-    }
-
-    // Check if user already exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: 'User already exists with this email.' });
-    }
-
-    // Create the user — role is always 'user' on registration (prevent privilege escalation)
-    const user = await User.create({
-      name,
-      email,
-      password
-      // role is NOT accepted from req.body — defaults to 'user' via schema
-    });
-
-    const token = generateToken(user._id);
-
-    res.status(201).json({
-      message: 'User registered successfully.',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt
-      }
-    });
-  } catch (error) {
-    console.error('Registration Error:', error.message);
-    res.status(500).json({ message: 'Server error during registration.' });
+  // Validate request
+  if (!name || !email || !password) {
+    throw new AppError('All fields (name, email, password) are required.', 400);
   }
-};
+
+  // Check if user already exists
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    throw new AppError('User already exists with this email.', 400);
+  }
+
+  // Create the user — role is always 'user' on registration (prevent privilege escalation)
+  const user = await User.create({
+    name,
+    email,
+    password
+    // role is NOT accepted from req.body — defaults to 'user' via schema
+  });
+
+  const token = generateToken(user._id);
+
+  res.status(201).json({
+    message: 'User registered successfully.',
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt
+    }
+  });
+});
 
 // Login user
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+export const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Please provide both email and password.' });
-    }
-
-    // Find the user by email
-    const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ message: 'Invalid email or password.' });
-    }
-
-    const token = generateToken(user._id);
-
-    res.status(200).json({
-      message: 'Login successful.',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
-    });
-  } catch (error) {
-    console.error('Login Error:', error.message);
-    res.status(500).json({ message: 'Server error during login.' });
+  if (!email || !password) {
+    throw new AppError('Please provide both email and password.', 400);
   }
-};
+
+  // Find the user by email
+  const user = await User.findOne({ email });
+  if (!user || !(await user.comparePassword(password))) {
+    throw new AppError('Invalid email or password.', 401);
+  }
+
+  const token = generateToken(user._id);
+
+  res.status(200).json({
+    message: 'Login successful.',
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }
+  });
+});
 
 // Get current logged-in user's profile
-export const getMe = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select('-password');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
-    }
-    res.status(200).json(user);
-  } catch (error) {
-    console.error('GetMe Error:', error.message);
-    res.status(500).json({ message: 'Server error fetching profile.' });
+export const getMe = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select('-password');
+  if (!user) {
+    throw new AppError('User not found.', 404);
   }
-};
+  res.status(200).json(user);
+});
 
 // Update profile picture
-export const updateProfilePic = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded.' });
-    }
-
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
-    }
-
-    const result = await imagekit.files.upload({
-      file: req.file.buffer.toString('base64'),
-      fileName: `avatar-${Date.now()}-${req.file.originalname}`,
-      folder: '/avatars'
-    });
-
-    user.profilePicUrl = result.url;
-    await user.save();
-
-    res.status(200).json({
-      message: 'Profile picture updated successfully.',
-      profilePicUrl: user.profilePicUrl
-    });
-  } catch (error) {
-    console.error('Profile Pic Upload Error:', error.message);
-    res.status(500).json({ message: 'Failed to update profile picture.' });
+export const updateProfilePic = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new AppError('No file uploaded.', 400);
   }
-};
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    throw new AppError('User not found.', 404);
+  }
+
+  const result = await imagekit.files.upload({
+    file: req.file.buffer.toString('base64'),
+    fileName: `avatar-${Date.now()}-${req.file.originalname}`,
+    folder: '/avatars'
+  });
+
+  user.profilePicUrl = result.url;
+  await user.save();
+
+  res.status(200).json({
+    message: 'Profile picture updated successfully.',
+    profilePicUrl: user.profilePicUrl
+  });
+});
