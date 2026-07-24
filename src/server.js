@@ -7,12 +7,20 @@ const PORT = env.PORT;
 
 let server;
 
-// Connect to Database first, then start the server
-connectDB().then(() => {
-  server = app.listen(PORT, () => {
-    logger.info(`Server is running and listening on http://localhost:${PORT}`);
-  });
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+
+    server = app.listen(PORT, () => {
+      logger.info(`Server is running and listening on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    logger.error(`Server startup failed: ${error.message}`);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 const gracefulShutdown = (signal) => {
   logger.info(`${signal} received. Starting graceful shutdown...`);
