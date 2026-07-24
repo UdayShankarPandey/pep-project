@@ -10,8 +10,17 @@ const connectDB = async () => {
     logger.info(`Connected to MongoDB Atlas successfully: ${conn.connection.host}`);
   } catch (error) {
     logger.error(`Failed to connect to MongoDB Atlas: ${error.message}`);
-    process.exit(1);
+    throw error;
   }
 };
 
-export default connectDB;
+const disconnectDB = async () => {
+  try {
+    await mongoose.connection.close();
+    logger.info('MongoDB connection closed.');
+  } catch (error) {
+    logger.error(`Failed to close MongoDB connection: ${error.message}`);
+  }
+};
+
+export { connectDB, disconnectDB };
