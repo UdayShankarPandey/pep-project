@@ -13,6 +13,9 @@ RUN npm ci --only=production
 # Copy the rest of the application code
 COPY . .
 
+# Create writable logs directory for the non-root Node.js user
+RUN mkdir -p /usr/src/app/logs && chown -R node:node /usr/src/app/logs
+
 # Set environment variable to production
 ENV NODE_ENV=production
 
